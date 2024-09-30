@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+{% block content %}
+<h2>Detalle de Factura: {{ object.numero }}</h2>
+<p><strong>Cliente:</strong> {{ object.venta.cliente.nombre }}</p>
+<p><strong>Fecha de Emisión:</strong> {{ object.fecha_emision }}</p>
+<p><strong>Tipo de Factura:</strong> {{ object.get_tipo_display }}</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>IVA</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for producto in productos %}
+        <tr>
+            <td>{{ producto.producto.nombre }}</td>
+            <td>{{ producto.cantidad }}</td>
+            <td>{{ producto.precio_unitario }}</td>
+            <td>{{ producto.iva }}</td>
+            <td>{{ producto.cantidad|floatformat:2 }} x {{ producto.precio_unitario|floatformat:2 }} = {{ producto.cantidad|floatformat:2|add:producto.precio_unitario|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+<h3>Totales</h3>
+<p><strong>Subtotal (sin IVA):</strong> {{ subtotal }}</p>
+<p><strong>IVA:</strong> {{ iva }}</p>
+<p><strong>Total (con IVA):</strong> {{ total }}</p>
+
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

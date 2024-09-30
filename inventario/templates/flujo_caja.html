@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<h1>Flujo de Caja</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Concepto</th>
+            <th>Valor</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Cobros de Ventas</td>
+            <td>{{ cobros_ventas }}</td>
+        </tr>
+        <tr>
+            <td>Pagos de Facturas</td>
+            <td>{{ pagos_facturas }}</td>
+        </tr>
+        <tr>
+            <td>Total en Efectivo</td>
+            <td>{{ total_efectivo }}</td>
+        </tr>
+    </tbody>
+</table>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

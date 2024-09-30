@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+  <a href="{% url 'venta_create' %}" class="btn btn-primary mb-3">Agregar Venta</a>
+  <a href="{% url 'factura_emitida_venta_list' %}" class="btn btn-primary mb-3">Facturas Emitidas</a>
+
+  <div class="container mt-4">
+    <h2 class="titulo">Lista de Ventas</h2>
+    <input type="text" id="searchCliente" onkeyup="filterTable('searchCliente', 0)" placeholder="Buscar por cliente">
+    <input type="text" id="searchFactura" onkeyup="filterTable('searchFactura', 2)" placeholder="Buscar por número de factura">
+    
+    <table class="table table-bordered table-striped" id="productTable">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Número de Factura</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for venta in ventas %}
+            <tr>
+                <td>{{ venta.cliente.nombre }}</td>
+                <td>{{ venta.fecha }}</td>
+                <td>
+                    {% if venta.facturacliente %}
+                        {{ venta.facturacliente.numero }}
+                    {% else %}
+                        <span>No facturada</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not venta.facturacliente and not venta.pagada %}
+                        <a href="{% url 'factura_venta' venta.id %}" class="btn btn-success btn-sm">Facturar</a>
+                    {% endif %}
+                    <a href="{% url 'venta_detail' venta.id %}" class="btn btn-info btn-sm">Detalles</a>
+                    {% if not venta.pagada %}
+                        <a href="{% url 'registrar_cobro' venta.id %}" class="btn btn-warning btn-sm">Registrar Cobro</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+
+<script>
+    function filterTable(inputId, columnIndex) {
+        let input = document.getElementById(inputId);
+        let filter = input.value.toUpperCase();
+        let table = document.getElementById("productTable");
+        let tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            let td = tr[i].getElementsByTagName("td")[columnIndex];
+            if (td) {
+                let txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+</script>
+
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

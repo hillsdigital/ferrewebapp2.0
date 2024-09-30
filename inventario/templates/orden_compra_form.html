@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+  <h1>Crear Orden de Compra</h1>
+  <form method="post">
+    <button type="button" id="add-producto">Agregar Producto</button>
+    <button type="submit">Guardar</button>
+    {% csrf_token %}
+    {{ form.as_p }}
+    <h2>Productos</h2>
+    {{ productos_formset.management_form }}
+    <div id="productos-container">
+      {% for form in productos_formset %}
+        <div class="producto-form" data-form-id="{{ forloop.counter0 }}">
+          {{ form.producto.label_tag }} {{ form.producto }}
+          {{ form.cantidad.label_tag }} {{ form.cantidad }}
+          <button type="button" class="remove-producto btn btn-danger">Eliminar</button>
+        </div>
+      {% endfor %}
+    </div>
+  </form>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Inicializamos Select2 en los formularios iniciales
+      initSelect2();
+
+      // Lógica para agregar un nuevo formulario de producto
+      document.getElementById('add-producto').addEventListener('click', function() {
+        var totalForms = document.getElementById('id_productos-TOTAL_FORMS');
+        var formIndex = parseInt(totalForms.value);
+
+        // Crear un nuevo div para el formulario
+        var newFormDiv = document.createElement('div');
+        newFormDiv.classList.add('producto-form');
+        newFormDiv.setAttribute('data-form-id', formIndex);
+
+        // Generar el contenido del nuevo formulario (en blanco)
+        newFormDiv.innerHTML = `
+          <label for="id_productos-${formIndex}-producto">Producto:</label>
+          <select name="productos-${formIndex}-producto" class="select2" id="id_productos-${formIndex}-producto">
+            {% for producto in productos %}
+              <option value="{{ producto.id }}">{{ producto.nombre }}</option>
+            {% endfor %}
+          </select>
+
+          <label for="id_productos-${formIndex}-cantidad">Cantidad:</label>
+          <input type="number" name="productos-${formIndex}-cantidad" id="id_productos-${formIndex}-cantidad" min="1">
+
+          <button type="button" class="remove-producto btn btn-danger">Eliminar</button>
+        `;
+
+        // Añadir el nuevo formulario al contenedor
+        document.getElementById('productos-container').appendChild(newFormDiv);
+
+        // Incrementar el número total de formularios
+        totalForms.value = formIndex + 1;
+
+        // Inicializar Select2 en el nuevo formulario
+        $(newFormDiv).find('.select2').select2();
+      });
+
+      // Lógica para eliminar un formulario de producto
+      document.getElementById('productos-container').addEventListener('click', function(event) {
+        if (event.target.classList.contains('remove-producto')) {
+          event.target.closest('.producto-form').remove();
+
+          // Actualizar el número total de formularios después de la eliminación
+          var totalForms = document.getElementById('id_productos-TOTAL_FORMS');
+          var formCount = document.querySelectorAll('.producto-form').length;
+          totalForms.value = formCount;
+        }
+      });
+
+      function initSelect2() {
+        // Inicializar Select2 para todos los select que ya existen
+        $('.select2').select2();
+      }
+    });
+  </script>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

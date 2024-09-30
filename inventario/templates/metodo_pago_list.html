@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<h1>Lista de Métodos de Pago</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Nombre</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for metodo in metodos_pago %}
+            <tr>
+                <td>{{ metodo.nombre }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="1">No hay métodos de pago registrados.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'metodo_pago_create' %}">Agregar Nuevo Método de Pago</a>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

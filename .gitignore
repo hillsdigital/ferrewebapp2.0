@@ -1,0 +1,59 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+venv/
+*.egg-info/
+*.eggs/
+
+# Django
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+db.sqlite3
+media/
+staticfiles/
+
+# Environment
+.env
+.env.*
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.DS_Store
+
+# IDEs and editors
+.idea/
+*.sublime-workspace
+*.sublime-project
+.vscode/
+*.swp
+
+# Coverage reports
+.coverage
+htmlcov/
+*.cover
+
+# # Migrations
+# migrations/
+
+# Test data
+*.dat
+
+# Python virtual environment
+venv/
+.env/
+env/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

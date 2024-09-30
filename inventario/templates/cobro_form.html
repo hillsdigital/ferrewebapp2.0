@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="titulo">Registrar Cobro</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="mb-3">
+            <label class="form-label">Cliente:</label>
+            <p>{{ cliente.nombre }}</p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Venta:</label>
+            <p>Venta ID: {{ venta.id }} - Fecha: {{ venta.fecha }} - Total: ${{ venta.total }}</p>
+        </div>
+        <button type="submit" class="btn btn-primary">Registrar Cobro</button>
+    </form>
+</div>
+{% endblock %}

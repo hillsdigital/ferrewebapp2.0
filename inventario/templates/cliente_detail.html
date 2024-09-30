@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+    <h2 class="titulo">Detalles del Cliente: {{ cliente.nombre }}</h2>
+    <a href="{% url 'cliente_update' cliente.id %}" class="btn btn-warning mb-3">Editar Cliente</a>
+    
+    <div class="mb-4">
+        <h4>Información del Cliente</h4>
+        <p><strong>Dirección:</strong> {{ cliente.direccion }}</p>
+        <p><strong>Teléfono:</strong> {{ cliente.telefono }}</p>
+        <p><strong>Email:</strong> {{ cliente.email }}</p>
+        <p><strong>Saldo en Cuenta:</strong> {{ cliente.saldo }}</p>
+    </div>
+    
+    <div class="mb-4">
+        <h4>Productos Comprados</h4>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in productos_comprados %}
+                <tr>
+                    <td>{{ producto.producto__nombre }}</td>
+                    <td>{{ producto.total_cantidad }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">No hay productos comprados</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="mb-4">
+        <h4>Ventas Pendientes</h4>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                    <th>Pagada</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venta in ventas_pendientes %}
+                <tr>
+                    <td>{{ venta.fecha }}</td>
+                    <td>{{ venta.total }}</td>
+                    <td>{{ venta.pagada|yesno:"Sí,No" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No hay ventas pendientes</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="mb-4">
+        <h4>Facturas Emitidas</h4>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Numero</th>
+                    <th>Fecha de Emisión</th>
+                    <th>Subtotal</th>
+                    <th>IVA</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for factura in facturas_emitidas %}
+                <tr>
+                    <td>{{ factura.numero }}</td>
+                    <td>{{ factura.fecha_emision }}</td>
+                    <td>{{ factura.subtotal }}</td>
+                    <td>{{ factura.iva }}</td>
+                    <td>{{ factura.total }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No hay facturas emitidas</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="mb-4">
+        <h4>Pagos Realizados</h4>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Factura</th>
+                    <th>Fecha de Pago</th>
+                    <th>Monto</th>
+                    <th>Metodo de Pago</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pago in pagos_realizados %}
+                <tr>
+                    <td>{{ pago.factura.numero }}</td>
+                    <td>{{ pago.fecha_pago }}</td>
+                    <td>{{ pago.monto }}</td>
+                    <td>{{ pago.metodo_pago.nombre }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No hay pagos realizados</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

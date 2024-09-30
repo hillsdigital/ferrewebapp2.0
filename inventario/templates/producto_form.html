@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+
+  <div class="container"> 
+  <h1>{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Producto</h1>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Guardar</button>
+</form>
+  <button class="btn-secondary" onclick="window.location.href='{% url 'producto_list' %}'">Volver a la lista</button>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

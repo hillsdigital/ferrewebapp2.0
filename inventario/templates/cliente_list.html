@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+    <h2 class="titulo">Lista de Clientes</h2>
+    <a href="{% url 'cliente_create' %}" class="btn btn-primary mb-3">Agregar Cliente</a>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+                <th>Email</th>
+                <th>Saldo en cuenta</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cliente in clientes %}
+            <tr>
+                <td>{{ cliente.nombre }}</td>
+                <td>{{ cliente.direccion }}</td>
+                <td>{{ cliente.telefono }}</td>
+                <td>{{ cliente.email }}</td>
+                <td>{{ cliente.saldo }}</td>
+                <td>
+                    <a href="{% url 'cliente_detail' cliente.id %}" class="btn btn-info btn-sm">Detalles</a>
+                    <a href="{% url 'cliente_update' cliente.id %}" class="btn btn-warning btn-sm">Editar</a>
+                    <a href="{% url 'cliente_delete' cliente.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

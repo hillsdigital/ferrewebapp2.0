@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+  <h2 class="titulo">Facturas de proveedores</h2>
+  <table id="table">
+    <thead>
+      <tr>
+        <th>Número</th>
+        <th>Fecha</th>
+        <th>Orden de Compra</th>
+        <th>Proveedor</th>
+        <th>Tipo de Factura</th>
+        <th>Productos</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for factura in facturas %}
+        <tr>
+          <td>{{ factura.numero }}</td>
+          <td>{{ factura.fecha }}</td>
+          <td>{{ factura.orden_compra.id }}</td>
+          <td>{{ factura.orden_compra.proveedor.nombre }}</td>
+          <td>{{ factura.get_tipo_display }}</td>
+          <td>
+            <table>
+              <tbody>
+                {% for producto in factura.facturaproducto_set.all %}
+                  <tr>
+                    <td>{{ producto.producto.nombre }}</td>
+                    <td>Cant.: {{ producto.cantidad }}</td>
+                    {% if factura.tipo == 'A' %}
+                      <td>Prec. Sin IVA: ${{ producto.precio_sin_iva }}</td>
+                      <td>Prec. Con IVA: ${{ producto.precio_con_iva }}</td>
+                    {% else %}
+                      <td>Prec. Con IVA: ${{ producto.precio_con_iva }}</td>
+                    {% endif %}
+                    <td>Subtotal: ${{ producto.total }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </td>
+          <td>${{ factura.total_general }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

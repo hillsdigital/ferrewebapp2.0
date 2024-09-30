@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center">Reporte Financiero</h1>
+    <hr>
+
+    <table class="table table-bordered table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Concepto</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Total Ventas</td>
+                <td>{{ reporte.total_ventas | floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>IVA Ventas</td>
+                <td>{{ reporte.iva_ventas | floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Total Cobros</td>
+                <td>{{ reporte.total_cobros | floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Total Facturas Emitidas</td>
+                <td>{{ reporte.total_facturas | floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>IVA Facturas</td>
+                <td>{{ reporte.iva_facturas | floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Total Compras</td>
+                <td>{{ reporte.total_compras | floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>IVA Compras</td>
+                <td>{{ reporte.iva_compras | floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Total Facturas de Compras Emitidas</td>
+                <td>{{ reporte.total_facturas_compras | floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Total Pagos a Proveedores</td>
+                <td>{{ reporte.total_pagos_proveedores | floatformat:2 }}</td>
+            </tr>
+            <tr class="font-weight-bold">
+                <td>Saldo Final</td>
+                <td>{{ reporte.saldo_final | floatformat:2 }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block footer %}
+
+{% endblock %}

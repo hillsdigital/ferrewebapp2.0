@@ -1,0 +1,36 @@
+{% load static %}
+    <div class="container-cards-base">
+        <div class="card-base" onclick="window.location.href='{% url 'orden_compra_list' %}'">
+            <img src="{% static 'images/orden-compra.png' %}" alt="Órdenes de Compra" >
+            <p>Órdenes de Compra</p>
+        </div>
+        <div class="card-base" onclick="window.location.href='{% url 'proveedor_list' %}'">
+            <img src="{% static 'images/proveedores.png' %}" alt="Proveedores">
+            <p>Proveedores</p>
+        </div>
+        <div class="card-base" onclick="window.location.href='{% url 'producto_list' %}'">
+            <img src="{% static 'images/productos.png' %}" alt="Productos">
+            <p>Productos</p>
+        </div>
+        <div class="card-base" onclick="window.location.href='{% url 'factura_list' %}'">
+            <img src="{% static 'images/facturas.png' %}" alt="Facturas">
+            <p>Facturas proveedores</p>
+        </div>
+        <div class="card-base" onclick="window.location.href='{% url 'stock_list' %}'">
+            <img src="{% static 'images/inventario.png' %}" alt="Stock">
+            <p>Stock</p>
+        </div>
+        
+        <div class="card-base" onclick="window.location.href='{% url 'cliente_list' %}'">
+            <img src="{% static 'images/clientes.png' %}" alt="Clientes">
+            <p>Clientes</p>
+        </div>
+        <div class="card-base" onclick="window.location.href='{% url 'venta_list' %}'">
+            <img src="{% static 'images/ventas.png' %}" alt="Ventas">
+            <p>Ventas</p>
+        </div>
+        <div class="card-base" onclick="window.location.href='{% url 'reporte_financiero' %}'">
+            <img src="{% static 'images/ventas.png' %}" alt="Finanzas">
+            <p>Reporte Financiero</p>
+        </div>
+    </div>

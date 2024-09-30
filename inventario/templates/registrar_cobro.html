@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<h1>Registrar Cobro</h1>
+
+<p><strong>Monto total de la venta:</strong> ${{ monto_total|floatformat:2 }}</p>
+<p><strong>Saldo pendiente:</strong> <span id="saldo-pendiente">${{ saldo_pendiente|floatformat:2 }}</span></p>
+
+{% if mostrar_boton %}
+    <form method="post" id="cobro-form">
+        {% csrf_token %}
+        {{ cobro_form.as_p }}
+        <small id="monto-error" class="text-danger" style="display:none;">
+            El monto no puede ser mayor que el saldo pendiente de <span id="saldo-pendiente">{{ saldo_pendiente }}</span>.
+        </small>
+        <button type="submit" class="btn btn-primary">Registrar Cobro</button>
+    </form>
+{% else %}
+    <p>La venta ya está completamente saldada.</p>
+{% endif %}
+
+<a href="{% url 'venta_list' %}" class="btn btn-secondary mt-3">Volver a la lista de ventas</a>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const saldoPendiente = parseFloat(document.getElementById('saldo-pendiente').textContent.replace(/[^0-9.-]+/g,""));
+        const montoInput = document.getElementById('id_monto');
+        const errorElement = document.getElementById('monto-error');
+        const form = document.getElementById('cobro-form');
+        
+        if (form) {
+            montoInput.addEventListener('input', function() {
+                const monto = parseFloat(montoInput.value);
+                if (monto > saldoPendiente) {
+                    errorElement.style.display = 'block';
+                } else {
+                    errorElement.style.display = 'none';
+                }
+            });
+
+            form.addEventListener('submit', function(event) {
+                const monto = parseFloat(montoInput.value);
+                if (monto > saldoPendiente) {
+                    event.preventDefault();  // Evitar el envío del formulario si el monto es mayor
+                    errorElement.style.display = 'block';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

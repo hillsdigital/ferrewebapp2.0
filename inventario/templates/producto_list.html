@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mi Ferretería{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+{% include "navbar.html" %}  
+{% block content %}
+
+<h2 class="titulo">Lista de Productos</h2>
+
+<button class="agregar-producto" onclick="window.location.href='{% url 'producto_create' %}'">Agregar Producto</button>
+<button class="agregar-producto" onclick="window.location.href='{% url 'cargar_archivo' %}'">Cargar lista productos</button>
+
+<div class="container-input">
+    <input type="text" id="productInput" onkeyup="filterTable('productInput', 0)" placeholder="Buscar por nombre de producto...">
+    <input type="text" id="typeInput" onkeyup="filterTable('typeInput', 1)" placeholder="Buscar por descripción...">
+</div>
+
+<table class="table" id="productTable">
+    <thead>
+        <tr>
+            <th>Codigo</th>
+            <th>Nombre del Producto</th>
+            <th>descripcion</th>
+            <th>Imagen</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for producto in productos %}
+        <tr>
+            <td><a class="lista-producto" href="{% url 'producto_update' producto.pk %}">{{ producto.codigo }}</a></td>
+            <td><a class="lista-producto" href="{% url 'producto_update' producto.pk %}">{{ producto.nombre }}</a></td>
+            <td><a class="lista-producto" href="{% url 'producto_update' producto.pk %}">{{ producto.descripcion }}</a></td>
+            <td>
+                {% if producto.foto %}
+                <div class="foto-container">
+                    <a href="#" data-toggle="modal" data-target="#imageModal{{ producto.id }}">Foto</a>
+                    <img src="{{ producto.foto.url }}" alt="Foto de {{ producto.nombre }}" class="product-image">
+                </div>
+            
+                <!-- Modal para agrandar la imagen -->
+                <div class="modal fade" id="imageModal{{ producto.id }}" tabindex="-1" aria-labelledby="imageModalLabel{{ producto.id }}" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="imageModalLabel{{ producto.id }}">{{ producto.nombre }}</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <div class="modal-body text-center">
+                        <img src="{{ producto.foto.url }}" alt="Foto de {{ producto.nombre }}" class="img-fluid"> <!-- Imagen agrandada -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% else %}
+                Sin foto disponible
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    function filterTable(inputId, columnIndex) {
+        let input = document.getElementById(inputId);
+        let filter = input.value.toUpperCase();
+        let table = document.getElementById("productTable");
+        let tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            let td = tr[i].getElementsByTagName("td")[columnIndex];
+            if (td) {
+                let txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+</script>
+
+{% endblock %}
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

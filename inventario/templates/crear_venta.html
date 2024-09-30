@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+  <h1>Crear Venta</h1>
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" id="venta-form">
+    {% csrf_token %}
+    {{ venta_form.as_p }}
+    <h2>Productos</h2>
+    {{ productos_formset.management_form }}
+    <div id="productos-container">
+      {% for form in productos_formset %}
+        <div class="producto-form">
+          {{ form.producto.label_tag }} {{ form.producto }}
+          {{ form.cantidad.label_tag }} {{ form.cantidad }}
+          <div class="error-message" style="color:red; display:none;"></div>  <!-- Contenedor del mensaje de error -->
+          {{ form.precio_unitario.label_tag }} {{ form.precio_unitario }}
+          {{ form.proveedor.label_tag }} {{ form.proveedor }}
+          <button type="button" class="remove-producto btn btn-danger">Eliminar</button>
+        </div>
+      {% endfor %}
+    </div>
+    <button type="button" id="add-producto" class="btn btn-primary">Agregar Producto</button>
+    <button type="submit" class="btn btn-success">Guardar</button>
+  </form>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function updateFormIndices() {
+            document.querySelectorAll('.producto-form').forEach((form, index) => {
+                form.querySelectorAll('input, select').forEach(field => {
+                    const name = field.name.replace(/-\d+-/, `-${index}-`);
+                    field.name = name;
+                    field.id = name;
+                });
+            });
+        }
+
+        document.getElementById('add-producto').addEventListener('click', function() {
+            const formset = document.querySelectorAll('.producto-form');
+            const newFormIndex = formset.length;
+            const formTemplate = document.querySelector('.producto-form').cloneNode(true);
+
+            formTemplate.querySelectorAll('input, select').forEach(field => {
+                const name = field.name.replace(/-\d+-/, `-${newFormIndex}-`);
+                field.name = name;
+                field.id = name;
+                if (field.type === 'select-one') {
+                    field.value = ''; // Limpiar selección
+                } else if (field.type === 'number') {
+                    field.value = ''; // Limpiar valor
+                }
+            });
+
+            formTemplate.querySelector('.remove-producto').addEventListener('click', function() {
+                this.parentElement.remove();
+                updateFormIndices();
+            });
+
+            formTemplate.querySelector('select[name$=producto]').addEventListener('change', handleProductChange);
+            formTemplate.querySelector('select[name$=proveedor]').addEventListener('change', handleProviderChange);
+
+            document.getElementById('productos-container').appendChild(formTemplate);
+            document.getElementById('id_form-TOTAL_FORMS').value = newFormIndex + 1;
+        });
+
+        document.querySelectorAll('.remove-producto').forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.remove();
+                updateFormIndices();
+            });
+        });
+
+        function handleProductChange(event) {
+            const selectProducto = event.target;
+            const productoId = selectProducto.value;
+            const proveedorSelect = selectProducto.closest('.producto-form').querySelector('select[name$=proveedor]');
+            proveedorSelect.innerHTML = '<option value="">Selecciona un proveedor</option>';
+
+            if (productoId) {
+                fetch(`/ajax/get_proveedores/?producto_id=${productoId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(proveedor => {
+                            const option = document.createElement('option');
+                            option.value = proveedor.id;
+                            option.setAttribute('data-cantidad-disponible', proveedor.cantidad);  // Añadir el atributo con la cantidad disponible
+                            option.textContent = `${proveedor.nombre} - $${proveedor.precio_compra} - ${proveedor.cantidad} unidades disponibles`;
+                            proveedorSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        }
+
+        function handleProviderChange(event) {
+            const selectProveedor = event.target;
+            const proveedorId = selectProveedor.value;
+            const productoSelect = selectProveedor.closest('.producto-form').querySelector('select[name$=producto]');
+            const cantidadInput = selectProveedor.closest('.producto-form').querySelector('input[name$=cantidad]');
+            const precioUnitarioInput = selectProveedor.closest('.producto-form').querySelector('input[name$=precio_unitario]');
+            const errorMessage = selectProveedor.closest('.producto-form').querySelector('.error-message');
+
+            const cantidadDisponible = selectProveedor.options[selectProveedor.selectedIndex].getAttribute('data-cantidad-disponible');
+            
+            // Validar que la cantidad solicitada no exceda la cantidad disponible
+            cantidadInput.addEventListener('input', function() {
+                if (parseInt(cantidadInput.value) > parseInt(cantidadDisponible)) {
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = `No puedes vender más de ${cantidadDisponible} unidades.`;
+                } else {
+                    errorMessage.style.display = 'none';
+                }
+            });
+
+            if (proveedorId && productoSelect.value) {
+                fetch(`/ajax/get_precio_compra/?proveedor_id=${proveedorId}&producto_id=${productoSelect.value}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.precio_compra) {
+                            const precioVenta = data.precio_compra * 1.30;
+                            precioUnitarioInput.value = precioVenta.toFixed(2);
+                        } else {
+                            precioUnitarioInput.value = '';
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                precioUnitarioInput.value = '';
+            }
+        }
+
+        document.querySelectorAll('.producto-form select[name$=producto]').forEach(select => {
+            select.addEventListener('change', handleProductChange);
+        });
+
+        document.querySelectorAll('.producto-form select[name$=proveedor]').forEach(select => {
+            select.addEventListener('change', handleProviderChange);
+        });
+
+        // Validar antes de enviar el formulario
+        document.getElementById('venta-form').addEventListener('submit', function(event) {
+            let formIsValid = true;
+            document.querySelectorAll('.producto-form').forEach(form => {
+                const cantidadInput = form.querySelector('input[name$=cantidad]');
+                const proveedorSelect = form.querySelector('select[name$=proveedor]');
+                const cantidadDisponible = proveedorSelect.options[proveedorSelect.selectedIndex].getAttribute('data-cantidad-disponible');
+                const errorMessage = form.querySelector('.error-message');
+
+                if (parseInt(cantidadInput.value) > parseInt(cantidadDisponible)) {
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = `No puedes vender más de ${cantidadDisponible} unidades.`;
+                    formIsValid = false;
+                } else {
+                    errorMessage.style.display = 'none';
+                }
+            });
+
+            if (!formIsValid) {
+                event.preventDefault();  // Evitar el envío del formulario si hay errores
+            }
+        });
+    });
+  </script>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<h1>Agregar Método de Pago</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Guardar</button>
+</form>
+<a href="{% url 'metodo_pago_list' %}">Volver a la lista de métodos de pago</a>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

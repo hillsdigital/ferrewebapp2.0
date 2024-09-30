@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+  <h2 class="titulo">Proveedores</h2>
+  <a href="{% url 'proveedor_create' %}" class="btn btn-success">Agregar nuevo proveedor</a>  
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>CUIT</th>
+        <th>Email</th>
+        <th>CBU</th>
+        <th>Alias de la cuenta</th> <!-- Nueva columna para el alias de la cuenta bancaria -->
+        <th>Nombre de Contacto</th> <!-- Nueva columna para el nombre de contacto -->
+        <th>Celular</th> <!-- Nueva columna para el celular -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for proveedor in proveedores %}
+        <tr>
+          <td><a href="{% url 'proveedor_update' proveedor.pk %}">{{ proveedor.nombre }}</a></td>
+          <td><a href="{% url 'proveedor_update' proveedor.pk %}">{{ proveedor.cuit }}</a></td>
+          <td><a href="{% url 'proveedor_update' proveedor.pk %}">{{ proveedor.email }}</a></td>
+          <td><a href="{% url 'proveedor_update' proveedor.pk %}">{{ proveedor.cbu }}</a></td>
+          <td><a href="{% url 'proveedor_update' proveedor.pk %}">{{ proveedor.alias_cuenta_bancaria }}</a></td> <!-- Alias de la cuenta -->
+          <td><a href="{% url 'proveedor_update' proveedor.pk %}">{{ proveedor.nombre_contacto }}</a></td> <!-- Nombre de contacto -->
+          <td><a href="{% url 'proveedor_update' proveedor.pk %}">{{ proveedor.celular }}</a></td> <!-- Celular -->
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

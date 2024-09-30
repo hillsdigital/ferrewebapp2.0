@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<h1>Detalle de la Venta</h1>
+
+<div class="venta-detalle">
+    <p><strong>Cliente:</strong> {{ venta.cliente.nombre }}</p>
+    <p><strong>Fecha:</strong> {{ venta.fecha }}</p>
+    <p><strong>Saldo del Cliente:</strong> ${{ saldo_cliente|floatformat:2 }}</p>  <!-- Mostrar el saldo -->
+
+    <h2>Productos Vendidos</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Proveedor</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto.producto.nombre }}</td>
+                <td>{{ producto.proveedor.nombre }}</td> <!-- Asegúrate de que el proveedor esté correctamente asociado -->
+                <td>{{ producto.cantidad }}</td>
+                <td>${{ producto.precio_unitario|floatformat:2 }}</td>
+                {% comment %} <td>${{ producto.cantidad|floatformat:2 }} x ${{ producto.precio_unitario|floatformat:2 }} = ${{ producto.cantidad|floatformat:2|multiply:producto.precio_unitario|floatformat:2 }}</td> {% endcomment %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No se encontraron productos para esta venta.</td>
+            </tr>
+            {% endfor %}
+            {% if saldo_cliente is not None %}
+    <p>Saldo del cliente: {{ saldo_cliente }}</p>
+{% else %}
+    <p>Venta sin cliente.</p>
+{% endif %}
+
+        </tbody>
+    </table>
+
+    <p><strong>Total:</strong> ${{ venta.total|floatformat:2 }}</p>
+</div>
+
+<a href="{% url 'venta_list' %}" class="btn btn-primary">Volver a la lista de ventas</a>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

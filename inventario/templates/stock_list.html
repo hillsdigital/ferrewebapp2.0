@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+  <h2 class="titulo">Lista de Stocks</h2>
+  <table id="table">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Cantidad</th>
+        <th>Última Actualización</th>  <!-- Nueva columna para la fecha -->
+        <th>Detalles</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for stock in stocks %}
+        <tr>
+          <td>{{ stock.producto }}</td>
+          <td>{{ stock.cantidad }}</td>
+          <td>{{ stock.ultima_actualizacion|date:"d/m/Y H:i" }}</td>  <!-- Mostrar la fecha de la última actualización -->
+          <td>
+            <table>
+              <thead>
+                <tr>
+                  <th>Proveedor</th>
+                  
+                  <th>cantidad</th>
+                  <th>Precio Compra</th>
+                  <th>Última Actualización</th>  <!-- Nueva columna para la fecha en detalles -->
+                </tr>
+              </thead>
+              <tbody>
+                {% for detalle in stock.stockdetalle_set.all %}
+                  <tr>
+                    <td>{{ detalle.proveedor }}</td>
+                    <td>{{ detalle.cantidad }}</td>
+
+                    <td>{{ detalle.precio_compra }}</td>
+                    <td>{{ detalle.ultima_actualizacion|date:"d/m/Y H:i" }}</td> <!-- Mostrar la fecha de la última actualización -->
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </td>
+          <td class="acciones">
+            <a href="{% url 'stock_update' stock.pk %}">Editar</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <a href="{% url 'stock_create' %}">Crear nuevo stock</a>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

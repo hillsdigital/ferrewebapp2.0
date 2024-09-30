@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Editar Stock</title>
+</head>
+<body>
+    <h1>Editar Stock de {{ form.instance.producto.nombre }}</h1>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        
+        <h2>Detalles del Stock</h2>
+        {{ stock_detalle_forms.management_form }}  <!-- Importante para manejar el formset -->
+        
+        {% for form in stock_detalle_forms %}
+            <div>
+                <h3>Proveedor: {{ form.instance.proveedor.nombre }}</h3>
+                {{ form.as_p }}
+            </div>
+        {% endfor %}
+        
+        <button type="submit">Guardar cambios</button>
+    </form>
+    
+    <a href="{% url 'stock_list' %}">Cancelar</a>
+</body>
+</html>

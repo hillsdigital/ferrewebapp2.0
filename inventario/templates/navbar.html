@@ -1,0 +1,35 @@
+<nav>
+<div class="container-cards">
+        <div class="card" onclick="window.location.href='{% url 'home' %}'">
+            <a href="{% url 'home' %}">Inicio</a>
+        </div>
+        <div class="card" onclick="window.location.href='{% url 'orden_compra_list' %}'">
+            <a href="{% url 'orden_compra_list' %}">Órdenes de Compra</a>
+        </div>
+        <div class="card" onclick="window.location.href='{% url 'proveedor_list' %}'">
+            <a href="{% url 'proveedor_list' %}">Proveedores</a>
+        </div>
+        <div class="card" onclick="window.location.href='{% url 'producto_list' %}'">
+            <a href="{% url 'producto_list' %}">Productos</a>
+        </div>
+        <div class="card" onclick="window.location.href='{% url 'factura_list' %}'">
+            <a href="{% url 'factura_list' %}">Facturas</a>
+        </div>
+        <div class="card" onclick="window.location.href='{% url 'stock_list' %}'">
+            <a href="{% url 'stock_list' %}">Stock</a>
+        </div>
+        <div class="card" onclick="window.location.href='{% url 'cliente_list' %}'">
+            <a href="{% url 'cliente_list' %}">Clientes</a> 
+        </div>
+        <div class="card" onclick="window.location.href='{% url 'venta_list' %}'">
+            <a href="{% url 'venta_list' %}">Ventas</a>
+        </div>
+        <div class="card" onclick="window.location.href='{% url 'metodo_pago_list' %}'">
+            <a href="{% url 'metodo_pago_list' %}">Metodos de pago</a>
+        </div>
+        <div class="card" onclick="window.location.href='{% url 'reporte_financiero' %}'">
+            <a href="{% url 'reporte_financiero' %}">Finanzas</a>
+        </div>
+        
+</div>
+</nav>

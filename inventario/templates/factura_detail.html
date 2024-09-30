@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+  <h2>Factura {{ factura.numero }} - {{ factura.fecha }}</h2>
+
+  <table class="table table-striped mt-3">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Cantidad</th>
+        <th>Precio Unitario</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for producto in productos %}
+        <tr>
+          <td>{{ producto.producto.nombre }}</td>
+          <td>{{ producto.cantidad }}</td>
+          <td>${{ producto.precio_unitario }}</td>
+          <td>${{ producto.total }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="4">No hay productos en esta factura.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Total Factura: ${{ total }}</h3>
+
+  <a href="{% url 'factura_update' factura.id %}" class="btn btn-warning mt-3">Editar Factura</a>
+  {% comment %} <a href="{% url 'factura_delete' factura.id %}" class="btn btn-danger mt-3">Eliminar Factura</a> {% endcomment %}
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="titulo">Lista de Facturas Emitidas</h2>
+    
+    <!-- Mostrar mensajes de Django -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Fecha de Emisión</th>
+                <th>Número de Factura</th>
+                <th>Total</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for factura in facturas_emitidas %}
+            <tr>
+                <td>{{ factura.venta.cliente.nombre }}</td>
+                <td>{{ factura.fecha_emision }}</td>
+                <td>{{ factura.numero }}</td>
+                <td>{{ factura.total }}</td>
+                <td>
+                    <a href="{% url 'factura_venta_detail' factura.id %}" class="btn btn-info btn-sm">Detalles</a>
+                    <!-- Botón para enviar por WhatsApp -->
+                    <a href="https://wa.me/{{ factura.venta.cliente.telefono }}?text={{ factura.generar_mensaje_whatsapp|urlencode }}" target="_blank" class="btn btn-success btn-sm">Enviar por WhatsApp</a>
+                    <!-- Botón para enviar por Gmail -->
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to={{ factura.venta.cliente.email }}&su=Factura%20{{ factura.numero }}&body={{ factura.generar_mensaje_gmail|urlencode }}" target="_blank" class="btn btn-primary btn-sm">Enviar por Gmail</a>
+                </td>
+                
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

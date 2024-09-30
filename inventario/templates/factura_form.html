@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block content %}
+  <h2>Crear Factura para la Orden de Compra {{ orden_compra.id }}</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Crear Factura</button>
+  </form>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

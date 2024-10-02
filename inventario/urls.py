@@ -24,6 +24,8 @@ from .views import (
     flujo_de_caja,
     get_precio_compra,
     get_proveedores,
+    obtener_numero_factura,
+    obtener_proximo_numero_factura,
     registrar_cobro,
 )
 from inventario import views
@@ -52,7 +54,8 @@ urlpatterns = [
     path('factura-proveedor/<int:factura_id>/productos/create/', views.factura_producto_create, name='factura_producto_create'),
     path('factura-proveedor/<int:factura_id>/', views.factura_detail, name='factura_detail'),
     path('factura-proveedor/<int:factura_id>/update/', views.factura_update, name='factura_update'),
-    
+        path('obtener-proximo-numero-factura/', obtener_proximo_numero_factura, name='obtener_proximo_numero_factura'),
+
     # Facturas de ventas
     path('ventas/', views.venta_list, name='venta_list'),
     path('ventas/create/', views.crear_venta, name='venta_create'),
@@ -61,6 +64,7 @@ urlpatterns = [
     path('facturas-ventas/', FacturaEmitidaListView.as_view(), name='factura_emitida_venta_list'),
     path('ventas/<int:venta_id>/registrar_cobro/', registrar_cobro, name='registrar_cobro'),
     path('facturas-ventas/<int:pk>/', FacturaVentaDetailView.as_view(), name='factura_venta_detail'),
+    path('obtener-numero-factura/', obtener_numero_factura, name='obtener_numero_factura'),
 
     # Otros
     path('stocks/', StockListView.as_view(), name='stock_list'),

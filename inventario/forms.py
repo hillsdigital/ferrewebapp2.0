@@ -64,16 +64,18 @@ OrdenCompraProductoFormSet = forms.inlineformset_factory(
 class FacturaForm(forms.ModelForm):
     class Meta:
         model = Factura
-        fields = ['numero', 'fecha', 'tipo']  # Incluye 'tipo' en los campos
+        fields = ['numero', 'fecha', 'tipo']  # Incluye el número y tipo
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date'}),
-            'tipo': forms.Select(),  # Utiliza un widget de selección para el campo 'tipo'
+            'tipo': forms.Select(),  # Widget de selección para tipo de factura
+            'numero': forms.TextInput(attrs={'readonly': False})  # Permitir que el número sea editable
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Iniciar la fecha con la fecha actual
         self.fields['fecha'].initial = datetime.date.today()
+
         
 class FacturaProductoForm(forms.ModelForm):
     producto_nombre = forms.CharField(
@@ -170,7 +172,7 @@ class StockDetalleForm(forms.ModelForm):
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
-        fields = ['nombre', 'direccion', 'telefono', 'email']
+        fields = ['nombre', 'direccion', 'telefono', 'email', 'cuit']
 
 class VentaForm(forms.ModelForm):
     metodo_pago_principal = forms.ModelChoiceField(
@@ -268,20 +270,26 @@ VentaProductoFormset = inlineformset_factory(
     can_delete=True
 )
 
+from django import forms
+from .models import FacturaCliente
+
 class FacturaClienteForm(forms.ModelForm):
     class Meta:
         model = FacturaCliente
-        fields = ['numero', 'tipo']
+        fields = ['tipo', 'numero', 'punto_venta']
         widgets = {
             'tipo': forms.Select(choices=FacturaCliente.TIPO_FACTURA_CHOICES),
+            'numero': forms.TextInput(attrs={'readonly': 'readonly'}),  # Hacer 'numero' de solo lectura
+            'punto_venta': forms.TextInput(attrs={'readonly': 'readonly'}),  # Opcional: hacer 'punto_venta' de solo lectura
         }
 
     def save(self, commit=True):
         factura = super().save(commit=False)
-        factura.calcular_totales()
+        factura.calcular_totales()  # Asegúrate de que este método esté definido en tu modelo.
         if commit:
             factura.save()
         return factura
+
 
 from django import forms
 from .models import CobroVenta

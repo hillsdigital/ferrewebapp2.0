@@ -23,10 +23,14 @@
       {% for form in productos_formset %}
         <div class="producto-form">
           {{ form.producto.label_tag }} {{ form.producto }}
+          
+          
+          {{ form.proveedor.label_tag }} {{ form.proveedor }}
           {{ form.cantidad.label_tag }} {{ form.cantidad }}
           <div class="error-message" style="color:red; display:none;"></div>  <!-- Contenedor del mensaje de error -->
+ 
+
           {{ form.precio_unitario.label_tag }} {{ form.precio_unitario }}
-          {{ form.proveedor.label_tag }} {{ form.proveedor }}
           <button type="button" class="remove-producto btn btn-danger">Eliminar</button>
         </div>
       {% endfor %}

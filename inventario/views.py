@@ -214,6 +214,26 @@ class OrdenCompraDeleteView(DeleteView):
     template_name = 'orden_compra_confirm_delete.html'
     success_url = reverse_lazy('orden_compra_list')
 
+
+from django.http import JsonResponse
+from .models import Factura
+
+def obtener_proximo_numero_factura(request):
+    tipo = request.GET.get('tipo')
+    punto_venta = '0001'  # Puedes hacerlo dinámico si es necesario
+
+    # Obtener la última factura de este tipo y punto de venta
+    ultima_factura = Factura.objects.filter(punto_venta=punto_venta, tipo=tipo).order_by('-id').first()
+
+    if ultima_factura:
+        ultimo_numero = int(ultima_factura.numero.split('-')[-1]) + 1
+    else:
+        ultimo_numero = 1
+
+    numero_factura = f"{punto_venta}-{tipo}-{ultimo_numero:08d}"
+    return JsonResponse({'numero_factura': numero_factura})
+
+
 def factura_create(request, orden_compra_id):
     orden_compra = get_object_or_404(OrdenCompra, id=orden_compra_id)
     
@@ -618,7 +638,13 @@ def venta_detail(request, id):
         'productos': productos,
         'saldo_cliente': saldo_cliente  # Pasar el saldo del cliente al template
     })
+def obtener_numero_factura(request):
+    tipo = request.GET.get('tipo')
+    punto_venta = '0001'  # O el valor que corresponda
+    nueva_factura = FacturaCliente(tipo=tipo, punto_venta=punto_venta)
+    nuevo_numero = nueva_factura.generar_numero_factura()
 
+    return JsonResponse({'numero': nuevo_numero})
 class FacturaVentaView(UpdateView):
     model = Venta
     form_class = FacturaClienteForm
@@ -628,10 +654,9 @@ class FacturaVentaView(UpdateView):
     def get(self, request, *args, **kwargs):
         venta = self.get_object()
 
-        # Si la venta no tiene cliente, no se puede facturar
         if not venta.cliente:
             messages.error(request, "No se puede emitir factura para una venta sin cliente.")
-            return redirect('venta_list')  # O cualquier vista apropiada
+            return redirect('venta_list')
 
         return super().get(request, *args, **kwargs)
 
@@ -640,29 +665,25 @@ class FacturaVentaView(UpdateView):
         venta = self.get_object()
 
         if not hasattr(venta, 'facturacliente'):
-            # Crea una instancia de FacturaCliente si no existe
             factura_cliente = FacturaCliente.objects.create(
                 venta=venta,
-                numero=f'FAC-{venta.id}',  # Genera un número de factura
-                tipo='A'  # Establece el tipo de factura por defecto
+                tipo='A',  # Establece el tipo de factura por defecto, cambia a 'B' si es necesario
+                punto_venta='0001'  # Valor por defecto para el punto de venta
             )
         else:
             factura_cliente = venta.facturacliente
 
-        # Calcula los totales antes de cargar el formulario
         factura_cliente.calcular_totales()
         
         kwargs['instance'] = factura_cliente
         return kwargs
 
     def form_valid(self, form):
-        # Calcula los totales al guardar el formulario
         response = super().form_valid(form)
         factura_cliente = form.instance
-        factura_cliente.calcular_totales()  # Llama al método para calcular los totales
+        factura_cliente.calcular_totales()
         factura_cliente.save()
         return response
-
 
 
 

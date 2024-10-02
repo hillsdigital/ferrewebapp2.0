@@ -53,3 +53,18 @@ def update_stock_on_factura_delete(sender, instance, **kwargs):
 
 
 
+# ventas/signals.py
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .models import Factura, FacturaCliente
+
+@receiver(post_save, sender=Factura)
+def factura_post_save(sender, instance, created, **kwargs):
+    if created:
+        instance.enviar_afip()
+
+@receiver(post_save, sender=FacturaCliente)
+def factura_cliente_post_save(sender, instance, created, **kwargs):
+    if created:
+        instance.enviar_afip()

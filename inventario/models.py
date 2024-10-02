@@ -39,7 +39,10 @@ class Producto(models.Model):
 class OrdenCompra(models.Model):
     fecha = models.DateField()
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
-    
+    @property
+    def factura_existente(self):
+        # Verifica si ya existe una factura para esta orden de compra
+        return Factura.objects.filter(orden_compra=self).exists()
     def __str__(self):
         return f'Orden {self.id} - {self.fecha}'
 
@@ -52,16 +55,52 @@ class Factura(models.Model):
     TIPO_FACTURA_CHOICES = [
         ('A', 'Factura A'),
         ('B', 'Factura B'),
-        ('S', 'Sin Factura'),  # Nueva opción sin tratamiento de IVA
+        ('S', 'Sin Factura'),
     ]
-    
-    numero = models.CharField(max_length=255)
+
+    punto_venta = models.CharField(max_length=4, default='0001')  # Código del punto de venta
+    numero = models.CharField(max_length=20, blank=True)  # Número de factura generado automáticamente
     fecha = models.DateField()
     orden_compra = models.ForeignKey(OrdenCompra, on_delete=models.CASCADE)
     tipo = models.CharField(max_length=1, choices=TIPO_FACTURA_CHOICES)
-    
+
+    def save(self, *args, **kwargs):
+        # Generar el número de factura si aún no existe
+        if not self.numero:
+            self.numero = self.generar_numero_factura()
+
+        super().save(*args, **kwargs)
+
+    def generar_numero_factura(self):
+        """Genera el número de factura en el formato PUNTO_VENTA-NUMERO_FACTURA basado en el tipo"""
+        
+        # Definir el código de tipo de factura según el tipo seleccionado
+        if self.tipo == 'A':
+            codigo_tipo = '001'  # Código para Factura A
+        elif self.tipo == 'B':
+            codigo_tipo = '006'  # Código para Factura B
+        elif self.tipo == 'S':
+            codigo_tipo = '000'  # Código para Sin Factura
+
+        # Consultar la última factura generada del mismo tipo y punto de venta
+        ultima_factura = Factura.objects.filter(punto_venta=self.punto_venta, tipo=self.tipo).order_by('-numero').first()
+
+        if ultima_factura:
+            # Extraer el último número de factura (la parte después del punto de venta y tipo)
+            ultimo_numero = int(ultima_factura.numero.split('-')[-1]) + 1
+        else:
+            # Si no hay facturas anteriores, comenzar desde 1
+            ultimo_numero = 1
+
+        # Formatear el número de factura con 8 dígitos para el número de factura
+        numero_factura = f"{ultimo_numero:08d}"
+
+        # Combinar el código de tipo y el número formateado
+        return f"{self.punto_venta}-{codigo_tipo}-{numero_factura}"
+
     def __str__(self):
         return f'Factura {self.numero} - {self.tipo} - {self.fecha}'
+
 
 
 class FacturaProducto(models.Model):
@@ -136,6 +175,7 @@ class Cliente(models.Model):
     direccion = models.TextField()
     telefono = models.CharField(max_length=20, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
+    cuit = models.CharField(max_length=16, null=True, blank=True)  # Añadir este campo
     saldo = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
 
     def __str__(self):
@@ -273,7 +313,8 @@ class FacturaCliente(models.Model):
     ]
     
     venta = models.OneToOneField('Venta', on_delete=models.CASCADE)
-    numero = models.CharField(max_length=255)
+    numero = models.CharField(max_length=255, blank=True, null=True)  # Permite estar en blanco inicialmente
+    punto_venta = models.CharField(max_length=5, default='0001')  # Punto de venta AFIP
     fecha_emision = models.DateField(auto_now_add=True)
     tipo = models.CharField(max_length=1, choices=TIPO_FACTURA_CHOICES)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -282,33 +323,57 @@ class FacturaCliente(models.Model):
     precio_sin_iva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     precio_con_iva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_iva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
+
+    class Meta:
+        unique_together = ('numero', 'tipo', 'punto_venta')  # Asegura que el número de factura sea único
+
     def __str__(self):
         return f'Factura {self.numero} - {self.tipo} - {self.fecha_emision}'
+
+    def generar_numero_factura(self):
+        # Filtrar facturas por el tipo y punto de venta
+        ultima_factura = FacturaCliente.objects.filter(tipo=self.tipo, punto_venta=self.punto_venta).order_by('-numero').first()
+
+        if ultima_factura:
+            # Extraer el número de la última factura según el tipo y aumentar en 1
+            try:
+                ultimo_numero = int(ultima_factura.numero.split('-')[1])
+                nuevo_numero = ultimo_numero + 1
+            except (IndexError, ValueError):
+                nuevo_numero = 1  # Si no se puede parsear el número, comienza desde 1
+        else:
+            nuevo_numero = 1  # Si no hay facturas del mismo tipo, comienza desde 1
+
+        # Formatear el nuevo número con ceros a la izquierda (usualmente 8 dígitos según normativa)
+        return f'{self.punto_venta}-{str(nuevo_numero).zfill(8)}'
+
+
+    def save(self, *args, **kwargs):
+        if not self.numero:  # Solo generar número si no existe
+            self.numero = self.generar_numero_factura()
+        super(FacturaCliente, self).save(*args, **kwargs)
 
     def calcular_totales(self):
         items = self.venta.ventaproducto_set.all()
 
         if self.tipo == 'A':
-            # Factura A: Calcula IVA y subtotal
             self.precio_sin_iva = sum(item.cantidad * item.precio_unitario for item in items)
             self.total_iva = self.precio_sin_iva * Decimal('0.21')  # IVA del 21%
             self.precio_con_iva = self.precio_sin_iva + self.total_iva
             self.subtotal = self.precio_sin_iva
         elif self.tipo == 'B':
-            # Factura B: Precio incluye el IVA, no se separa IVA
             self.precio_con_iva = sum(item.cantidad * (item.precio_unitario * Decimal('1.21')) for item in items)
             self.precio_sin_iva = 0  # No se muestra en Factura B
             self.total_iva = 0  # No se muestra en Factura B
             self.subtotal = self.precio_con_iva
 
-        # Asignar total
         self.iva = self.total_iva
         self.total = self.precio_con_iva
-        self.save()
+        super(FacturaCliente, self).save()
 
         # Actualizar el saldo del cliente después de calcular la factura
         self.venta.cliente.actualizar_saldo_facturado(self.venta, self.total)
+
     def generar_mensaje_whatsapp(self):
         """Genera un mensaje de WhatsApp con los datos de la factura"""
         return f"Hola {self.venta.cliente.nombre}, te envío la factura {self.numero} por un total de {self.total}. Fecha de emisión: {self.fecha_emision}."
@@ -316,8 +381,6 @@ class FacturaCliente(models.Model):
     def generar_mensaje_gmail(self):
         """Genera un mensaje para enviar por correo electrónico"""
         return f"Hola {self.venta.cliente.nombre},\n\nTe envío la factura #{self.numero} emitida el {self.fecha_emision} por un total de {self.total}.\n\nSaludos."
-
-
 
 
 class MetodoPago(models.Model):

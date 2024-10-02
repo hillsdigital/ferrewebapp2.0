@@ -5,37 +5,25 @@
 {% endblock %}
 
 {% block content %}
-    <!-- Detalles de los productos -->
-    <h3>Detalles de la Venta</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Precio Unitario</th>
-                <th>Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for producto in productos %}
-            <tr>
-                <td>{{ producto.producto.nombre }}</td>
-                <td>{{ producto.cantidad }}</td>
-                <td>${{ producto.precio_unitario }}</td>
-                <td>${{ producto.cantidad|floatformat:2|add:producto.precio_unitario|floatformat:2 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 <div class="container mt-4">
     <h2>Factura para Venta {{ object.id }}</h2>
     <form method="post" id="factura-form">
         {% csrf_token %}
-        {{ form.as_p }}
+        <div class="form-group">
+            {{ form.tipo.label_tag }}
+            {{ form.tipo }}
+        </div>
+        <div class="form-group">
+            {{ form.numero.label_tag }}
+            {{ form.numero }}
+        </div>
+        <div class="form-group">
+            {{ form.punto_venta.label_tag }}
+            {{ form.punto_venta }}
+        </div>
 
-        <!-- Campos específicos de Factura A -->
-        <div id="factura-a-campos">
+        <!-- Campos adicionales para Factura A -->
+        <div id="factura-a-campos" style="display: none;">
             <label for="id_precio_sin_iva">Precio sin IVA:</label>
             <input type="text" id="id_precio_sin_iva" name="precio_sin_iva" value="{{ form.instance.precio_sin_iva }}" readonly>
             
@@ -43,51 +31,51 @@
             <input type="text" id="id_total_iva" name="total_iva" value="{{ form.instance.total_iva }}" readonly>
         </div>
 
-        <!-- Este campo es común para ambos tipos de factura -->
         <label for="id_precio_con_iva">Precio con IVA:</label>
         <input type="text" id="id_precio_con_iva" name="precio_con_iva" value="{{ form.instance.precio_con_iva }}" readonly>
 
         <label for="id_total">Total:</label>
         <input type="text" id="id_total" name="total" value="{{ form.instance.total }}" readonly>
-        
+
         <button type="submit" class="btn btn-success">Emitir Factura</button>
     </form>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tipoFacturaSelect = document.getElementById('id_tipo');
+            const numeroFacturaInput = document.getElementById('id_numero');
+            const facturaACampos = document.getElementById('factura-a-campos');
 
+            // Función para actualizar el número de factura según el tipo seleccionado
+            function actualizarNumeroFactura() {
+                const tipoFactura = tipoFacturaSelect.value;
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const tipoFacturaSelect = document.getElementById('id_tipo');
-        const facturaACampos = document.getElementById('factura-a-campos');
-        const precioSinIvaInput = document.getElementById('id_precio_sin_iva');
-        const totalIvaInput = document.getElementById('id_total_iva');
-        const precioConIvaInput = document.getElementById('id_precio_con_iva');
-        const totalInput = document.getElementById('id_total');
-
-        function calcularTotales() {
-            const tipoFactura = tipoFacturaSelect.value;
-            let precioConIva = parseFloat(precioConIvaInput.value) || 0;
-            let totalIva = 0;
-
-            if (tipoFactura === 'A') {
-                const precioSinIva = parseFloat(precioSinIvaInput.value) || 0;
-                totalIva = precioSinIva * 0.21;  // IVA 21%
-                precioConIva = precioSinIva + totalIva;
-
-                facturaACampos.style.display = 'block';
-            } else if (tipoFactura === 'B') {
-                facturaACampos.style.display = 'none';
+                fetch("{% url 'obtener_numero_factura' %}?tipo=" + tipoFactura)
+                    .then(response => response.json())
+                    .then(data => {
+                        numeroFacturaInput.value = data.numero;  // Actualiza el campo número con el valor obtenido
+                    });
             }
 
-            totalInput.value = precioConIva.toFixed(2);
-            totalIvaInput.value = totalIva.toFixed(2);
-        }
+            // Detectar cambios en el tipo de factura
+            tipoFacturaSelect.addEventListener('change', function() {
+                actualizarNumeroFactura();
 
-        tipoFacturaSelect.addEventListener('change', calcularTotales);
-        calcularTotales();
-    });
-</script>
+                // Mostrar u ocultar los campos de Factura A
+                if (tipoFacturaSelect.value === 'A') {
+                    facturaACampos.style.display = 'block';
+                } else {
+                    facturaACampos.style.display = 'none';
+                }
+            });
+
+            // Ejecutar al cargar la página para configurar el formulario
+            actualizarNumeroFactura();
+        });
+    </script>
+</div>
 {% endblock %}
 
-{% block footer %}
+
+{% block footer %}  
 {% endblock %}

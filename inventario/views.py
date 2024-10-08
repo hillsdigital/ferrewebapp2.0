@@ -4,6 +4,8 @@ from django.forms import inlineformset_factory
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, UpdateView, ListView, DeleteView, TemplateView
+
+from inventario.services import AFIPService
 from .models import CobroVenta, FacturaProducto, MetodoPago, OrdenCompraProducto, PagoFactura, Proveedor, Producto, OrdenCompra, Factura, Stock, StockDetalle, VentaProducto
 from .forms import CobroForm, FacturaProductoForm, MetodoPagoForm, OrdenCompraProductoFormSet, ProveedorForm, ProductoForm, OrdenCompraForm, FacturaForm, FacturaProductoFormSet, StockDetalleForm, StockForm, VentaProductoForm
 import logging
@@ -645,6 +647,9 @@ def obtener_numero_factura(request):
     nuevo_numero = nueva_factura.generar_numero_factura()
 
     return JsonResponse({'numero': nuevo_numero})
+
+logger = logging.getLogger(__name__)
+
 class FacturaVentaView(UpdateView):
     model = Venta
     form_class = FacturaClienteForm
@@ -654,16 +659,20 @@ class FacturaVentaView(UpdateView):
     def get(self, request, *args, **kwargs):
         venta = self.get_object()
 
+        # Verificar si la venta tiene un cliente asociado
         if not venta.cliente:
             messages.error(request, "No se puede emitir factura para una venta sin cliente.")
             return redirect('venta_list')
 
+        # Guardar el cliente en el contexto para su uso en la plantilla
+        self.cliente = venta.cliente
         return super().get(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         venta = self.get_object()
 
+        # Crear o recuperar la factura asociada
         if not hasattr(venta, 'facturacliente'):
             factura_cliente = FacturaCliente.objects.create(
                 venta=venta,
@@ -673,16 +682,45 @@ class FacturaVentaView(UpdateView):
         else:
             factura_cliente = venta.facturacliente
 
+        # Calcular totales y guardar la factura
         factura_cliente.calcular_totales()
-        
+        factura_cliente.save()
+
         kwargs['instance'] = factura_cliente
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['cliente'] = self.cliente  # Agregar el cliente al contexto
+        return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
         factura_cliente = form.instance
         factura_cliente.calcular_totales()
         factura_cliente.save()
+
+        # Enviar la factura a AFIP
+        try:
+            afip_service = AFIPService(ambiente='homologacion')  # Cambia a 'produccion' cuando corresponda
+            
+            # Imprimir los datos que se van a enviar a AFIP
+            datos_factura = self.preparar_datos_factura(factura_cliente)
+            print("Datos de la factura que se enviarán a AFIP:", datos_factura)  # Aquí se imprimen los datos
+            
+            afip_service.enviar_factura(factura_cliente.id)
+            messages.success(
+                self.request, 
+                f"Factura {factura_cliente.numero} enviada exitosamente a AFIP. CAE: {factura_cliente.cae}"
+            )
+        except Exception as e:
+            logger.error(f"Error al enviar la factura {factura_cliente.id} a AFIP: {e}")
+            messages.error(
+                self.request, 
+                f"Error al enviar la factura a AFIP: {e}"
+            )
+            # Opcional: Podrías revertir cambios o marcar la factura como no enviada
+
         return response
 
 

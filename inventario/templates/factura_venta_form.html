@@ -7,6 +7,16 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Factura para Venta {{ object.id }}</h2>
+
+    <!-- Mostrar información del cliente -->
+    <div class="cliente-info mb-4">
+        <h4>Información del Cliente</h4>
+        <p><strong>Nombre:</strong> {{ cliente.nombre }}</p>
+        <p><strong>Documento:</strong> {{ cliente.cuit }}</p>
+        <p><strong>Dirección:</strong> {{ cliente.direccion }}</p>
+        <!-- Agrega más campos según sea necesario -->
+    </div>
+
     <form method="post" id="factura-form">
         {% csrf_token %}
         <div class="form-group">
@@ -75,7 +85,6 @@
     </script>
 </div>
 {% endblock %}
-
 
 {% block footer %}  
 {% endblock %}

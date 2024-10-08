@@ -306,6 +306,12 @@ class VentaProducto(models.Model):
     def __str__(self):
         return f'{self.producto.nombre} - {self.cantidad} unidades - {self.precio_unitario}'
 
+# your_app/models.py
+
+from django.db import models
+from decimal import Decimal
+import datetime
+
 class FacturaCliente(models.Model):
     TIPO_FACTURA_CHOICES = [
         ('A', 'Factura A'),
@@ -323,6 +329,8 @@ class FacturaCliente(models.Model):
     precio_sin_iva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     precio_con_iva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_iva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cae = models.CharField(max_length=20, blank=True, null=True)  # CAE asignado por AFIP
+    cae_vto = models.DateField(blank=True, null=True)  # Fecha de vencimiento del CAE
 
     class Meta:
         unique_together = ('numero', 'tipo', 'punto_venta')  # Asegura que el número de factura sea único
@@ -337,7 +345,7 @@ class FacturaCliente(models.Model):
         if ultima_factura:
             # Extraer el número de la última factura según el tipo y aumentar en 1
             try:
-                ultimo_numero = int(ultima_factura.numero.split('-')[1])
+                ultimo_numero = int(ultima_factura.numero.split('-')[-1])
                 nuevo_numero = ultimo_numero + 1
             except (IndexError, ValueError):
                 nuevo_numero = 1  # Si no se puede parsear el número, comienza desde 1
@@ -346,7 +354,6 @@ class FacturaCliente(models.Model):
 
         # Formatear el nuevo número con ceros a la izquierda (usualmente 8 dígitos según normativa)
         return f'{self.punto_venta}-{str(nuevo_numero).zfill(8)}'
-
 
     def save(self, *args, **kwargs):
         if not self.numero:  # Solo generar número si no existe

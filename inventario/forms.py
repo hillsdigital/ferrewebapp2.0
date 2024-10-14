@@ -77,6 +77,12 @@ class FacturaForm(forms.ModelForm):
         self.fields['fecha'].initial = datetime.date.today()
 
         
+# forms.py
+
+from django import forms
+from .models import FacturaProducto
+import datetime
+
 class FacturaProductoForm(forms.ModelForm):
     producto_nombre = forms.CharField(
         label='Producto',
@@ -100,6 +106,11 @@ class FacturaProductoForm(forms.ModelForm):
         decimal_places=2,
         max_digits=10
     )
+    retencion_ingresos_brutos = forms.DecimalField(
+        label='Retención Ingresos Brutos',
+        required=False,
+        widget=forms.NumberInput(attrs={'min': '0', 'step': '0.01'})
+    )
     iva = forms.ChoiceField(
         label='IVA (%)',
         choices=[(21, '21%'), (10.5, '10.5%'), (0, 'Sin IVA')],
@@ -108,7 +119,7 @@ class FacturaProductoForm(forms.ModelForm):
 
     class Meta:
         model = FacturaProducto
-        fields = ['producto', 'cantidad', 'precio_unitario', 'iva']
+        fields = ['producto', 'cantidad', 'precio_unitario', 'iva', 'retencion_ingresos_brutos']
         widgets = {
             'cantidad': forms.NumberInput(attrs={'min': '1'}),
             'precio_unitario': forms.NumberInput(attrs={'min': '0', 'step': '0.01'}),
@@ -128,25 +139,30 @@ class FacturaProductoForm(forms.ModelForm):
             # Cálculo dependiendo del tipo de factura
             if factura.tipo == 'A':
                 subtotal_sin_iva = producto.precio_unitario * cantidad
-                subtotal_con_iva = subtotal_sin_iva * (1 + float(self.fields['iva'].initial) / 100)
+                iva_value = float(self.initial.get('iva', 21))  # Valor predeterminado o existente
+                subtotal_con_iva = subtotal_sin_iva * (1 + iva_value / 100)
                 total_iva = subtotal_con_iva - subtotal_sin_iva
                 self.fields['precio_sin_iva'].initial = subtotal_sin_iva
                 self.fields['precio_con_iva'].initial = subtotal_con_iva
                 self.fields['total_iva'].initial = total_iva
-
             elif factura.tipo == 'B':
                 subtotal_con_iva = producto.precio_unitario * cantidad
-                subtotal_sin_iva = subtotal_con_iva / (1 + float(self.fields['iva'].initial) / 100)
+                iva_value = float(self.initial.get('iva', 21))
+                subtotal_sin_iva = subtotal_con_iva / (1 + iva_value / 100)
                 self.fields['precio_con_iva'].initial = subtotal_con_iva
                 self.fields['precio_sin_iva'].initial = subtotal_sin_iva
-
+                self.fields['total_iva'].initial = subtotal_con_iva - subtotal_sin_iva
             elif factura.tipo == 'S':
                 self.fields['iva'].initial = 0
                 self.fields['iva'].widget = forms.HiddenInput()  # Ocultar el campo IVA
                 self.fields['precio_sin_iva'].widget = forms.HiddenInput()
                 self.fields['precio_con_iva'].widget = forms.HiddenInput()
                 self.fields['total_iva'].widget = forms.HiddenInput()
+                self.fields['retencion_ingresos_brutos'].widget = forms.HiddenInput()  # Ocultar retención
 
+        # Mostrar u ocultar el campo de retención según el tipo de factura
+        if factura and factura.tipo != 'A':
+            self.fields['retencion_ingresos_brutos'].widget = forms.HiddenInput()
 
 FacturaProductoFormSet = forms.inlineformset_factory(
     Factura,

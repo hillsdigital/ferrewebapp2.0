@@ -101,7 +101,9 @@ class Factura(models.Model):
     def __str__(self):
         return f'Factura {self.numero} - {self.tipo} - {self.fecha}'
 
+# models.py
 
+from django.db import models
 
 class FacturaProducto(models.Model):
     IVA_CHOICES = [
@@ -118,31 +120,36 @@ class FacturaProducto(models.Model):
     precio_sin_iva = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     precio_con_iva = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     total_iva = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    retencion_ingresos_brutos = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name='Retención Ingresos Brutos'
+    )
 
     def save(self, *args, **kwargs):
-        # Si el tipo de factura es 'A', calculamos con IVA
+        # Cálculos existentes
         if self.factura.tipo == 'A':
             self.precio_sin_iva = self.precio_unitario
             self.precio_con_iva = self.precio_unitario * (1 + self.iva / 100)
             self.total_iva = self.precio_con_iva - self.precio_sin_iva
-
-        # Si es 'B', el precio con IVA ya está incluido
         elif self.factura.tipo == 'B':
             self.precio_con_iva = self.precio_unitario
             self.precio_sin_iva = self.precio_unitario / (1 + self.iva / 100)
-
-        # Si es 'Sin Factura', no hay tratamiento de IVA
         elif self.factura.tipo == 'S':
             self.iva = 0
             self.precio_sin_iva = self.precio_unitario
             self.precio_con_iva = self.precio_unitario
             self.total_iva = 0
-        
+            self.retencion_ingresos_brutos = 0  # Asegurar que no haya retención
+
         super().save(*args, **kwargs)
 
     def calcular_total(self):
-        """Devuelve el total del producto (cantidad * precio_con_iva)"""
-        return self.cantidad * self.precio_con_iva
+        """Devuelve el total del producto (cantidad * precio_con_iva - retención)"""
+        total = self.cantidad * self.precio_con_iva
+        if self.retencion_ingresos_brutos:
+            total -= self.retencion_ingresos_brutos
+        return total
+
 
 
 

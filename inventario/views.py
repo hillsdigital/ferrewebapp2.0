@@ -250,22 +250,29 @@ def factura_create(request, orden_compra_id):
         form = FacturaForm()
     
     return render(request, 'factura_form.html', {'form': form, 'orden_compra': orden_compra})
-
 def factura_producto_create(request, factura_id):
     factura = get_object_or_404(Factura, id=factura_id)
     orden_compra = factura.orden_compra
 
     if request.method == 'POST':
         orden_compra_productos = OrdenCompraProducto.objects.filter(orden_compra=orden_compra)
+        factura_tipo = factura.tipo  # Obtener el tipo de factura ('A', 'B', 'S')
 
         for oc_producto in orden_compra_productos:
             producto = oc_producto.producto
+            producto_id = producto.id
             try:
-                cantidad = int(request.POST.get(f'cantidad_{producto.id}', 0))
-                precio_unitario = float(request.POST.get(f'precio_unitario_{producto.id}', 0))
-                iva = float(request.POST.get(f'iva_{producto.id}', 21))  # Tomar el valor de IVA del formulario
+                cantidad = int(request.POST.get(f'cantidad_{producto_id}', 0))
+                precio_unitario = float(request.POST.get(f'precio_unitario_{producto_id}', 0))
+                iva = float(request.POST.get(f'iva_{producto_id}', 21))  # Tomar el valor de IVA del formulario
+                # Extraer retención solo si la factura es de tipo 'A'
+                if factura_tipo == 'A':
+                    retencion = float(request.POST.get(f'retencion_ingresos_brutos_{producto_id}', 0))
+                else:
+                    retencion = 0  # No aplicar retención para otros tipos
             except ValueError:
-                continue  # Ignorar si hay un error en los datos
+                # Manejar valores inválidos; puedes optar por agregar mensajes de error
+                continue  # Ignorar este producto si hay un error en los datos
 
             if cantidad > 0 and precio_unitario > 0:
                 # Crear el producto de la factura
@@ -274,7 +281,8 @@ def factura_producto_create(request, factura_id):
                     producto=producto,
                     cantidad=cantidad,
                     precio_unitario=precio_unitario,
-                    iva=iva
+                    iva=iva,
+                    retencion_ingresos_brutos=retencion if factura_tipo == 'A' else 0
                 )
                 factura_producto.save()
 
@@ -659,12 +667,10 @@ class FacturaVentaView(UpdateView):
     def get(self, request, *args, **kwargs):
         venta = self.get_object()
 
-        # Verificar si la venta tiene un cliente asociado
         if not venta.cliente:
             messages.error(request, "No se puede emitir factura para una venta sin cliente.")
             return redirect('venta_list')
 
-        # Guardar el cliente en el contexto para su uso en la plantilla
         self.cliente = venta.cliente
         return super().get(request, *args, **kwargs)
 
@@ -672,17 +678,15 @@ class FacturaVentaView(UpdateView):
         kwargs = super().get_form_kwargs()
         venta = self.get_object()
 
-        # Crear o recuperar la factura asociada
         if not hasattr(venta, 'facturacliente'):
             factura_cliente = FacturaCliente.objects.create(
                 venta=venta,
-                tipo='A',  # Establece el tipo de factura por defecto, cambia a 'B' si es necesario
-                punto_venta='0001'  # Valor por defecto para el punto de venta
+                tipo='A',
+                punto_venta='0001'
             )
         else:
             factura_cliente = venta.facturacliente
 
-        # Calcular totales y guardar la factura
         factura_cliente.calcular_totales()
         factura_cliente.save()
 
@@ -690,38 +694,42 @@ class FacturaVentaView(UpdateView):
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['cliente'] = self.cliente  # Agregar el cliente al contexto
-        return context
-
+            context = super().get_context_data(**kwargs)
+            context['cliente'] = self.cliente
+            context['productos'] = self.get_object().ventaproducto_set.all()  # Obtiene los productos de la venta
+            return context
     def form_valid(self, form):
         response = super().form_valid(form)
         factura_cliente = form.instance
         factura_cliente.calcular_totales()
         factura_cliente.save()
 
-        # Enviar la factura a AFIP
+        # Imprimir en consola los detalles de la factura
+        print("Detalles de la factura que se está enviando a AFIP:")
+        print(f"Número de factura: {factura_cliente.numero}")
+        print(f"Cliente: {factura_cliente.venta.cliente.nombre}")  # Ajusta según tu modelo
+        print(f"Total: {factura_cliente.total}")
+        print(f"Subtotal: {factura_cliente.subtotal}")
+        print(f"IVA: {factura_cliente.iva}")
+        print(f"Fecha de emisión: {factura_cliente.fecha_emision}")
+        
         try:
-            afip_service = AFIPService(ambiente='homologacion')  # Cambia a 'produccion' cuando corresponda
-            
-            # Imprimir los datos que se van a enviar a AFIP
-            datos_factura = self.preparar_datos_factura(factura_cliente)
-            print("Datos de la factura que se enviarán a AFIP:", datos_factura)  # Aquí se imprimen los datos
-            
-            afip_service.enviar_factura(factura_cliente.id)
+            afip_service = AFIPService(ambiente='homologacion')
+            afip_service.enviar_factura(factura_cliente)
             messages.success(
                 self.request, 
                 f"Factura {factura_cliente.numero} enviada exitosamente a AFIP. CAE: {factura_cliente.cae}"
             )
         except Exception as e:
-            logger.error(f"Error al enviar la factura {factura_cliente.id} a AFIP: {e}")
+            logger.error(f"Error al enviar la factura {factura_cliente.numero} a AFIP: {e}")
             messages.error(
                 self.request, 
                 f"Error al enviar la factura a AFIP: {e}"
             )
-            # Opcional: Podrías revertir cambios o marcar la factura como no enviada
 
         return response
+
+
 
 
 

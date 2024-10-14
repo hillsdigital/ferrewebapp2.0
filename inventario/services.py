@@ -8,10 +8,9 @@ from django.conf import settings
 from OpenSSL import crypto
 from zeep import Client
 from zeep.transports import Transport
-from inventario.models import FacturaCliente, FacturaProducto  # Asegúrate de que los modelos estén importados
+from inventario.models import FacturaCliente, FacturaProducto
 import logging
 
-# Configuración de AFIP
 CUIT = settings.CUIT
 CERT_PATH = os.path.join(settings.BASE_DIR, 'certs', 'certificado.crt')
 KEY_PATH = os.path.join(settings.BASE_DIR, 'certs', 'clave_privada.key')
@@ -75,7 +74,6 @@ class AFIPServiceBase:
             raise Exception(f"Error en WSAA: {response.status_code}")
 
         xml_response = ET.fromstring(response.content)
-        namespaces = {'ns': 'http://ar.gov.afip.dif.wsaa/'}
         token = xml_response.find('.//{http://ar.gov.afip.dif.wsaa/}token').text
         sign = xml_response.find('.//{http://ar.gov.afip.dif.wsaa/}sign').text
 
@@ -92,16 +90,12 @@ class AFIPServiceBase:
         client = Client(wsdl=self.wsfev1_url, transport=transport)
         return client
 
-
 class AFIPService(AFIPServiceBase):
-    def enviar_factura(self, factura_id):
-        try:
-            factura = FacturaCliente.objects.get(id=factura_id)
-        except FacturaCliente.DoesNotExist:
-            logger.error(f"FacturaCliente con id {factura_id} no existe.")
-            raise Exception("Factura no encontrada.")
+    def enviar_factura(self, factura):
+        if not isinstance(factura, FacturaCliente):
+            logger.error("Se esperaba una instancia de FacturaCliente.")
+            raise ValueError("Se esperaba una instancia de FacturaCliente.")
 
-        # Calcular totales si no están calculados
         if not factura.total:
             factura.calcular_totales()
 
@@ -124,27 +118,27 @@ class AFIPService(AFIPServiceBase):
         self.procesar_respuesta_factura(factura, response)
 
     def preparar_datos_factura(self, factura):
-        productos = FacturaProducto.objects.filter(factura=factura)
+        productos = factura.venta.ventaproducto_set.all()
 
         iva_dict = {}
-        for producto in productos:
-            iva_id = self.obtener_id_iva(producto.iva)
+        for item in productos:
+            iva_id = self.obtener_id_iva(item.iva)
             if iva_id not in iva_dict:
                 iva_dict[iva_id] = {
                     'Id': iva_id,
                     'BaseImp': 0.0,
                     'Importe': 0.0
                 }
-            iva_dict[iva_id]['BaseImp'] += float(producto.precio_sin_iva * producto.cantidad)
-            iva_dict[iva_id]['Importe'] += float(producto.total_iva * producto.cantidad)
+            iva_dict[iva_id]['BaseImp'] += float(item.precio_unitario * item.cantidad)
+            iva_dict[iva_id]['Importe'] += float(item.calcular_precio_con_iva() * item.cantidad)
 
         iva_list = list(iva_dict.values())
 
         detalles = []
-        for producto in productos:
+        for item in productos:
             detalles.append({
-                'Concepto': 1,  # 1: Productos, 2: Servicios, etc.
-                'DocTipo': 80,  # CUIT
+                'Concepto': 1,
+                'DocTipo': 80,
                 'DocNro': int(factura.venta.cliente.cuit),
                 'CbteDesde': int(factura.numero.split('-')[-1]),
                 'CbteHasta': int(factura.numero.split('-')[-1]),
@@ -164,7 +158,7 @@ class AFIPService(AFIPServiceBase):
         fe_comp_cons_req = {
             'FeCAEReq': {
                 'FeCabReq': {
-                    'CantReg': 1,
+                    'CantReg': len(detalles),
                     'PtoVta': int(factura.punto_venta),
                     'CbteTipo': self.obtener_tipo_cbte(factura.tipo)
                 },
@@ -174,20 +168,21 @@ class AFIPService(AFIPServiceBase):
             }
         }
 
-        # Imprimir los datos que se están preparando
-        print("Datos de la factura que se están preparando para enviar a AFIP:", fe_comp_cons_req)
+        # Usar logging para imprimir los datos que se están preparando
+        logger.debug("Datos de la factura que se están preparando para enviar a AFIP: %s", fe_comp_cons_req)
 
         return fe_comp_cons_req
 
+
     def obtener_id_iva(self, iva):
         if iva == Decimal('21.00'):
-            return 5  # 21% Responsable Inscripto
+            return 5
         elif iva == Decimal('10.50'):
-            return 4  # 10.5% Responsable Inscripto
+            return 4
         elif iva == Decimal('0.00'):
-            return 3  # Sin IVA
+            return 3
         else:
-            return 3  # Default a Sin IVA
+            return 3
 
     def obtener_tipo_cbte(self, tipo):
         if tipo == 'A':
@@ -195,7 +190,7 @@ class AFIPService(AFIPServiceBase):
         elif tipo == 'B':
             return 6
         else:
-            return 0  # Sin comprobante
+            return 0
 
     def procesar_respuesta_factura(self, factura, response):
         try:

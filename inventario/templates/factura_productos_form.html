@@ -1,3 +1,5 @@
+{# factura_producto_form.html #}
+
 {% extends "base.html" %}
 
 {% block navbar %}
@@ -22,6 +24,10 @@
           <th>Subtotal Con IVA</th>
           {% if factura.tipo != 'S' %}
             <th>Total IVA</th>
+          {% endif %}
+          
+          {% if factura.tipo == 'A' %}
+            <th>Retención Ingresos Brutos</th>
           {% endif %}
         </tr>
       </thead>
@@ -58,6 +64,13 @@
                 <input type="text" name="total_iva_{{ oc_producto.producto.id }}" 
                        class="form-control" readonly />
               </td>
+              
+              {% if factura.tipo == 'A' %}
+                <td>
+                  <input type="number" name="retencion_ingresos_brutos_{{ oc_producto.producto.id }}" 
+                         step="0.01" min="0" class="form-control" />
+                </td>
+              {% endif %}
             {% elif factura.tipo == 'S' %}
               <td>
                 <input type="text" name="precio_sin_iva_{{ oc_producto.producto.id }}" 
@@ -71,7 +84,7 @@
           </tr>
         {% empty %}
           <tr>
-            <td colspan="7">No hay productos en la orden de compra.</td>
+            <td colspan="8">No hay productos en la orden de compra.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -110,6 +123,8 @@
             if (facturaTipo !== 'S') {
                 document.querySelector(`input[name="total_iva_${productoId}"]`).value = totalIva.toFixed(2);
             }
+
+            // Opcional: Si deseas actualizar dinámicamente la retención, puedes agregar lógica aquí
         }
     }
 
@@ -125,7 +140,7 @@
             actualizarPrecios(this, '{{ factura.tipo }}');
         });
     });
-</script>
+  </script>
 
 {% endblock %}
 

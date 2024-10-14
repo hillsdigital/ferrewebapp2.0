@@ -17,6 +17,28 @@
         <!-- Agrega más campos según sea necesario -->
     </div>
 
+    <!-- Tabla de productos -->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                {% comment %} <th>Subtotal</th> {% endcomment %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto.producto.nombre }}</td>
+                <td>{{ producto.cantidad }}</td>
+                <td>${{ producto.precio_unitario }}</td>
+                {% comment %} <td>${{ producto.cantidad|multiply:producto.precio_unitario }}</td>  <!-- Aquí no uses el filtro de multiplicación --> {% endcomment %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
     <form method="post" id="factura-form">
         {% csrf_token %}
         <div class="form-group">

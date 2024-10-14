@@ -36,6 +36,8 @@
                     {% if factura.tipo == 'A' %}
                       <td>Prec. Sin IVA: ${{ producto.precio_sin_iva }}</td>
                       <td>Prec. Con IVA: ${{ producto.precio_con_iva }}</td>
+                      
+                      <td>IIBB{{ producto.retencion_ingresos_brutos }}</td>
                     {% else %}
                       <td>Prec. Con IVA: ${{ producto.precio_con_iva }}</td>
                     {% endif %}

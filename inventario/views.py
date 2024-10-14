@@ -236,6 +236,10 @@ def obtener_proximo_numero_factura(request):
     return JsonResponse({'numero_factura': numero_factura})
 
 
+
+
+
+
 def factura_create(request, orden_compra_id):
     orden_compra = get_object_or_404(OrdenCompra, id=orden_compra_id)
     
@@ -244,12 +248,24 @@ def factura_create(request, orden_compra_id):
         if form.is_valid():
             factura = form.save(commit=False)
             factura.orden_compra = orden_compra
+            
+            # Solo asignar retención si el tipo es 'A'
+            if factura.tipo == 'A':
+                factura.retencion_ingresos_brutos = form.cleaned_data.get('retencion_ingresos_brutos', 0)
+            else:
+                factura.retencion_ingresos_brutos = 0  # Establecer a 0 si no es tipo 'A'
+
+            print(f"Retención Ingresos Brutos: {factura.retencion_ingresos_brutos}")  # Depuración
+            
             factura.save()
             return redirect('factura_producto_create', factura_id=factura.id)  # Redirige a la creación de productos para esta factura
     else:
         form = FacturaForm()
     
     return render(request, 'factura_form.html', {'form': form, 'orden_compra': orden_compra})
+
+
+# views.py
 def factura_producto_create(request, factura_id):
     factura = get_object_or_404(Factura, id=factura_id)
     orden_compra = factura.orden_compra
@@ -258,6 +274,12 @@ def factura_producto_create(request, factura_id):
         orden_compra_productos = OrdenCompraProducto.objects.filter(orden_compra=orden_compra)
         factura_tipo = factura.tipo  # Obtener el tipo de factura ('A', 'B', 'S')
 
+        # Obtener la retención de ingresos brutos del formulario
+        if factura.tipo == 'A':
+            retencion_ingresos_brutos = float(request.POST.get('retencion_ingresos_brutos', 0))
+            factura.retencion_ingresos_brutos = retencion_ingresos_brutos
+            factura.save()  # Guardar la factura con la retención
+
         for oc_producto in orden_compra_productos:
             producto = oc_producto.producto
             producto_id = producto.id
@@ -265,13 +287,7 @@ def factura_producto_create(request, factura_id):
                 cantidad = int(request.POST.get(f'cantidad_{producto_id}', 0))
                 precio_unitario = float(request.POST.get(f'precio_unitario_{producto_id}', 0))
                 iva = float(request.POST.get(f'iva_{producto_id}', 21))  # Tomar el valor de IVA del formulario
-                # Extraer retención solo si la factura es de tipo 'A'
-                if factura_tipo == 'A':
-                    retencion = float(request.POST.get(f'retencion_ingresos_brutos_{producto_id}', 0))
-                else:
-                    retencion = 0  # No aplicar retención para otros tipos
             except ValueError:
-                # Manejar valores inválidos; puedes optar por agregar mensajes de error
                 continue  # Ignorar este producto si hay un error en los datos
 
             if cantidad > 0 and precio_unitario > 0:
@@ -282,7 +298,6 @@ def factura_producto_create(request, factura_id):
                     cantidad=cantidad,
                     precio_unitario=precio_unitario,
                     iva=iva,
-                    retencion_ingresos_brutos=retencion if factura_tipo == 'A' else 0
                 )
                 factura_producto.save()
 
@@ -298,12 +313,12 @@ def factura_producto_create(request, factura_id):
                 stock_detalle, created = StockDetalle.objects.get_or_create(
                     stock=stock,
                     proveedor=orden_compra.proveedor,
-                    defaults={'precio_compra': precio_unitario, 'cantidad': 0}  # Asegúrate de inicializar 'cantidad'
+                    defaults={'precio_compra': precio_unitario, 'cantidad': 0}
                 )
                 
                 # Actualizar cantidad y precio en StockDetalle
-                stock_detalle.cantidad += cantidad  # Sumar la cantidad
-                stock_detalle.precio_compra = precio_unitario  # Actualiza el precio
+                stock_detalle.cantidad += cantidad
+                stock_detalle.precio_compra = precio_unitario
                 stock_detalle.save()
 
         return redirect('factura_detail', factura_id=factura.id)

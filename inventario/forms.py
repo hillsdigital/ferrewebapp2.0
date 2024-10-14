@@ -61,27 +61,38 @@ OrdenCompraProductoFormSet = forms.inlineformset_factory(
     can_delete=True
 )
 
+# forms.py
+
+from django import forms
+from .models import Factura
+import datetime
+
 class FacturaForm(forms.ModelForm):
     class Meta:
         model = Factura
-        fields = ['numero', 'fecha', 'tipo']  # Incluye el número y tipo
+        fields = ['numero', 'fecha', 'tipo', 'retencion_ingresos_brutos']  # Incluye retención
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date'}),
             'tipo': forms.Select(),  # Widget de selección para tipo de factura
-            'numero': forms.TextInput(attrs={'readonly': False})  # Permitir que el número sea editable
+            'numero': forms.TextInput(attrs={'readonly': False}),  # Permitir que el número sea editable
+            'retencion_ingresos_brutos': forms.NumberInput(attrs={'min': '0', 'step': '0.01'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Iniciar la fecha con la fecha actual
         self.fields['fecha'].initial = datetime.date.today()
+        
+        # Si el tipo de factura no es 'A', ocultar el campo de retención
+        if self.instance and self.instance.tipo != 'A':
+            self.fields['retencion_ingresos_brutos'].widget = forms.HiddenInput()
 
         
+# forms.py
 # forms.py
 
 from django import forms
 from .models import FacturaProducto
-import datetime
 
 class FacturaProductoForm(forms.ModelForm):
     producto_nombre = forms.CharField(
@@ -106,11 +117,6 @@ class FacturaProductoForm(forms.ModelForm):
         decimal_places=2,
         max_digits=10
     )
-    retencion_ingresos_brutos = forms.DecimalField(
-        label='Retención Ingresos Brutos',
-        required=False,
-        widget=forms.NumberInput(attrs={'min': '0', 'step': '0.01'})
-    )
     iva = forms.ChoiceField(
         label='IVA (%)',
         choices=[(21, '21%'), (10.5, '10.5%'), (0, 'Sin IVA')],
@@ -119,7 +125,7 @@ class FacturaProductoForm(forms.ModelForm):
 
     class Meta:
         model = FacturaProducto
-        fields = ['producto', 'cantidad', 'precio_unitario', 'iva', 'retencion_ingresos_brutos']
+        fields = ['producto', 'cantidad', 'precio_unitario', 'iva']
         widgets = {
             'cantidad': forms.NumberInput(attrs={'min': '1'}),
             'precio_unitario': forms.NumberInput(attrs={'min': '0', 'step': '0.01'}),
@@ -158,11 +164,9 @@ class FacturaProductoForm(forms.ModelForm):
                 self.fields['precio_sin_iva'].widget = forms.HiddenInput()
                 self.fields['precio_con_iva'].widget = forms.HiddenInput()
                 self.fields['total_iva'].widget = forms.HiddenInput()
-                self.fields['retencion_ingresos_brutos'].widget = forms.HiddenInput()  # Ocultar retención
 
-        # Mostrar u ocultar el campo de retención según el tipo de factura
-        if factura and factura.tipo != 'A':
-            self.fields['retencion_ingresos_brutos'].widget = forms.HiddenInput()
+        # Ya no es necesario ocultar retención aquí
+
 
 FacturaProductoFormSet = forms.inlineformset_factory(
     Factura,

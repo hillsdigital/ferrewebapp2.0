@@ -51,6 +51,14 @@ class OrdenCompraProducto(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
 
+# models.py
+
+from django.db import models
+
+# models.py
+
+from django.db import models
+
 class Factura(models.Model):
     TIPO_FACTURA_CHOICES = [
         ('A', 'Factura A'),
@@ -63,6 +71,10 @@ class Factura(models.Model):
     fecha = models.DateField()
     orden_compra = models.ForeignKey(OrdenCompra, on_delete=models.CASCADE)
     tipo = models.CharField(max_length=1, choices=TIPO_FACTURA_CHOICES)
+    retencion_ingresos_brutos = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name='Retención Ingresos Brutos'
+    )
 
     def save(self, *args, **kwargs):
         # Generar el número de factura si aún no existe
@@ -72,7 +84,7 @@ class Factura(models.Model):
         super().save(*args, **kwargs)
 
     def generar_numero_factura(self):
-        """Genera el número de factura en el formato PUNTO_VENTA-NUMERO_FACTURA basado en el tipo"""
+        """Genera el número de factura en el formato PUNTO_VENTA-TIPO-CODIGO basado en el tipo"""
         
         # Definir el código de tipo de factura según el tipo seleccionado
         if self.tipo == 'A':
@@ -87,7 +99,10 @@ class Factura(models.Model):
 
         if ultima_factura:
             # Extraer el último número de factura (la parte después del punto de venta y tipo)
-            ultimo_numero = int(ultima_factura.numero.split('-')[-1]) + 1
+            try:
+                ultimo_numero = int(ultima_factura.numero.split('-')[-1]) + 1
+            except (IndexError, ValueError):
+                ultimo_numero = 1
         else:
             # Si no hay facturas anteriores, comenzar desde 1
             ultimo_numero = 1
@@ -99,11 +114,14 @@ class Factura(models.Model):
         return f"{self.punto_venta}-{codigo_tipo}-{numero_factura}"
 
     def __str__(self):
-        return f'Factura {self.numero} - {self.tipo} - {self.fecha}'
+        return f'Factura {self.numero} - {self.get_tipo_display()} - {self.fecha}'
 
 # models.py
 
 from django.db import models
+
+# models.py
+# models.py
 
 class FacturaProducto(models.Model):
     IVA_CHOICES = [
@@ -120,10 +138,6 @@ class FacturaProducto(models.Model):
     precio_sin_iva = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     precio_con_iva = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     total_iva = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    retencion_ingresos_brutos = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True,
-        verbose_name='Retención Ingresos Brutos'
-    )
 
     def save(self, *args, **kwargs):
         # Cálculos existentes
@@ -134,21 +148,20 @@ class FacturaProducto(models.Model):
         elif self.factura.tipo == 'B':
             self.precio_con_iva = self.precio_unitario
             self.precio_sin_iva = self.precio_unitario / (1 + self.iva / 100)
+            self.total_iva = self.precio_con_iva - self.precio_sin_iva
         elif self.factura.tipo == 'S':
             self.iva = 0
             self.precio_sin_iva = self.precio_unitario
             self.precio_con_iva = self.precio_unitario
             self.total_iva = 0
-            self.retencion_ingresos_brutos = 0  # Asegurar que no haya retención
 
         super().save(*args, **kwargs)
 
     def calcular_total(self):
-        """Devuelve el total del producto (cantidad * precio_con_iva - retención)"""
+        """Devuelve el total del producto (cantidad * precio_con_iva)"""
         total = self.cantidad * self.precio_con_iva
-        if self.retencion_ingresos_brutos:
-            total -= self.retencion_ingresos_brutos
         return total
+
 
 
 

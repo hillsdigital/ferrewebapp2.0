@@ -1,4 +1,4 @@
-{# factura_producto_form.html #}
+<!-- factura_productos_form.html -->
 
 {% extends "base.html" %}
 
@@ -24,10 +24,6 @@
           <th>Subtotal Con IVA</th>
           {% if factura.tipo != 'S' %}
             <th>Total IVA</th>
-          {% endif %}
-          
-          {% if factura.tipo == 'A' %}
-            <th>Retención Ingresos Brutos</th>
           {% endif %}
         </tr>
       </thead>
@@ -64,13 +60,6 @@
                 <input type="text" name="total_iva_{{ oc_producto.producto.id }}" 
                        class="form-control" readonly />
               </td>
-              
-              {% if factura.tipo == 'A' %}
-                <td>
-                  <input type="number" name="retencion_ingresos_brutos_{{ oc_producto.producto.id }}" 
-                         step="0.01" min="0" class="form-control" />
-                </td>
-              {% endif %}
             {% elif factura.tipo == 'S' %}
               <td>
                 <input type="text" name="precio_sin_iva_{{ oc_producto.producto.id }}" 
@@ -89,6 +78,14 @@
         {% endfor %}
       </tbody>
     </table>
+
+    {% if factura.tipo == 'A' %}
+      <div class="form-group">
+        <label for="retencion_ingresos_brutos">Retención Ingresos Brutos:</label>
+        <input type="number" name="retencion_ingresos_brutos" min="0" step="0.01" class="form-control" required />
+      </div>
+    {% endif %}
+
     <button type="submit" class="btn btn-primary mt-3">Guardar Productos</button>
   </form>
 
@@ -123,8 +120,6 @@
             if (facturaTipo !== 'S') {
                 document.querySelector(`input[name="total_iva_${productoId}"]`).value = totalIva.toFixed(2);
             }
-
-            // Opcional: Si deseas actualizar dinámicamente la retención, puedes agregar lógica aquí
         }
     }
 

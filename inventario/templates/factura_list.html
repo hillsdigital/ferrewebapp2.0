@@ -37,8 +37,8 @@
                       <td>Prec. Sin IVA: ${{ producto.precio_sin_iva }}</td>
                       <td>Prec. Con IVA: ${{ producto.precio_con_iva }}</td>
                       
-                      <td>IIBB{{ producto.retencion_ingresos_brutos }}</td>
-                    {% else %}
+                      <td>IIBB: ${{ factura.retencion_ingresos_brutos|default:"0.00" }}</td>
+                      {% else %}
                       <td>Prec. Con IVA: ${{ producto.precio_con_iva }}</td>
                     {% endif %}
                     <td>Subtotal: ${{ producto.total }}</td>

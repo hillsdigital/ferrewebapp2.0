@@ -398,14 +398,16 @@ def factura_update(request, factura_id):
     }
     return render(request, 'factura_productos_form.html', context)
 
-
 class FacturaListView(ListView):
     model = Factura
     template_name = 'factura_list.html'
     context_object_name = 'facturas'
 
     def get_queryset(self):
-        facturas = Factura.objects.select_related('orden_compra__proveedor').prefetch_related('facturaproducto_set__producto')
+        # Seleccionar las facturas con las relaciones necesarias y ordenarlas por orden de compra
+        facturas = Factura.objects.select_related('orden_compra__proveedor')\
+                                  .prefetch_related('facturaproducto_set__producto')\
+                                  .order_by('-orden_compra__id')  # Ordenar por el campo de orden de compra (id)
 
         # Calcular el total general para cada factura
         for factura in facturas:
@@ -414,8 +416,9 @@ class FacturaListView(ListView):
                 producto.total = producto.calcular_total()  # Usa el método calcular_total del modelo
                 total_general += producto.total
             factura.total_general = total_general
-        
+
         return facturas
+
 class StockCreateView(CreateView):
     model = Stock
     form_class = StockForm
